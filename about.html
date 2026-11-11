@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loose Threads — Ask the store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap" rel="stylesheet">
+<style>
+  :root { --paper: #f2f3f5; --ink: #0d0e12; --muted: #6a6d76; --line: #d9dbe1; --accent: #3047ff; --card: #ffffff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: "Archivo", system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  .mono { font-family: "Archivo", system-ui, sans-serif; font-weight: 600; font-stretch: 112%; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+  .serif { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-stretch: 125%; letter-spacing: -.03em; }
+  .serif i, .logo i { font-style: normal; }
+  a { color: inherit; }
+
+  header {
+    position: fixed; inset: 0 0 auto 0; z-index: 20;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 32px;
+    background: linear-gradient(var(--paper) 60%, transparent);
+  }
+  .logo { font-size: 19px; text-decoration: none; text-transform: uppercase; }
+  .logo i { color: var(--accent); }
+  nav { display: flex; gap: 22px; }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a.on, nav a:hover { color: var(--ink); }
+
+  main { max-width: 860px; margin: 0 auto; padding: 66px 24px 120px; }
+  h1 { font-size: clamp(30px, 4.4vw, 58px); line-height: .95; text-transform: uppercase; margin-top: .95em; }
+  /* "Read" gets struck through, then "Ask" is written above it */
+  .fix { position: relative; display: inline-block; }
+  .struck { position: relative; color: #a2a5ad; }
+  .struck::after {
+    content: ""; position: absolute; left: -4%; right: -4%; top: 52%; height: .07em;
+    background: var(--accent); border-radius: 99px; transform: scaleX(0); transform-origin: left center;
+    animation: strike .55s .5s cubic-bezier(.6,0,.3,1) forwards;
+  }
+  .ins {
+    position: absolute; left: 0; bottom: 100%; font-size: 1em; color: var(--accent); font-style: normal;
+    opacity: 0;
+    animation: write .5s 1.05s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  @keyframes strike { to { transform: scaleX(1); } }
+  @keyframes write { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  .ask { margin-top: 30px; position: relative; }
+  .ask input {
+    width: 100%; font: 500 22px/1 "Archivo", sans-serif; color: var(--ink);
+    padding: 24px 76px 24px 26px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--card); outline: none; box-shadow: 0 14px 40px -24px rgba(10,12,20,.4);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .ask input:focus { border-color: var(--ink); box-shadow: 0 18px 50px -24px rgba(10,12,20,.5); }
+  .ask button { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: 0; border-radius: 50%; width: 52px; height: 52px; display: grid; place-items: center; background: transparent; color: var(--ink); cursor: pointer; transition: background .2s, color .2s; }
+  .ask button:hover { background: var(--paper); }
+  .ask.editing button { background: var(--ink); color: var(--paper); }
+  .ask input[readonly] { cursor: pointer; }
+  .status { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: var(--muted); }
+  .status .dot { width: 7px; height: 7px; border-radius: 50%; background: #c9a85a; }
+  .status.model .dot { background: #4caf7a; box-shadow: 0 0 10px #4caf7a; }
+  .status.loading .dot { animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  .chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 8px 14px; font: 14px "Archivo", sans-serif; color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  .chip:hover { background: var(--card); border-color: var(--ink); }
+
+  #answer { margin-top: 28px; min-height: 200px; }
+  /* Desktop: the page fits the window; a tall answer card scrolls inside its own area */
+  @media (min-width: 641px) and (min-height: 560px) {
+    html, body { height: 100%; overflow: hidden; }
+    main { height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-bottom: 24px; }
+    #answer { flex: 0 1 auto; min-height: 0; overflow-y: auto; margin: 20px -20px 0; padding: 4px 20px 30px; scrollbar-width: none; }
+    #also { flex: none; margin-top: 4px; }
+    #answer.more { -webkit-mask-image: linear-gradient(#000 calc(100% - 56px), transparent); mask-image: linear-gradient(#000 calc(100% - 56px), transparent); }
+    #answer::-webkit-scrollbar { display: none; }
+  }
+  .acard { position: relative; background: var(--card); border-radius: 26px; padding: 30px; box-shadow: 0 30px 70px -40px rgba(10,12,20,.45); border: 1px solid #e3e5ea; }
+  .acard > * { opacity: 0; animation: up .5s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .acard > .guess { position: absolute; top: 22px; right: 22px; color: var(--accent); border: 1px solid currentColor; border-radius: 999px; padding: 5px 10px; font-size: 11px; }
+  .acard h2 { font-size: 34px; line-height: 1.02; }
+  .acard h2 i { color: var(--accent); }
+  .acard p { color: var(--muted); line-height: 1.55; margin-top: 12px; max-width: 560px; }
+  .acard .row { margin-top: 22px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .step { border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .step b { display: block; font-family: "Archivo", sans-serif; font-weight: 800; font-stretch: 125%; font-size: 30px; color: var(--accent); }
+  .step span { font-size: 14px; color: var(--muted); }
+  .pin { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .pin input { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: 16px "Archivo", sans-serif; width: 150px; background: #fff; }
+  .pin output { font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  tr.hit td { background: #e9edff; }
+  .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  .toggle button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; cursor: pointer; font: 13px "Archivo", sans-serif; }
+  .toggle button.on { background: var(--ink); color: var(--paper); }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { background: var(--paper); border-radius: 999px; padding: 9px 14px; font-size: 14px; }
+  .bars { display: grid; gap: 10px; }
+  .bar { display: grid; grid-template-columns: 120px 1fr 48px; gap: 12px; align-items: center; font-size: 14px; }
+  .bar .track { height: 10px; background: var(--paper); border-radius: 99px; overflow: hidden; }
+  .bar .fill { display: block; height: 100%; background: var(--accent); border-radius: 99px; width: 0; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .care { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .care div { border: 1px solid var(--line); border-radius: 16px; padding: 14px; text-align: center; font-size: 13px; color: var(--muted); }
+  .care big { display: block; font-size: 26px; color: var(--ink); margin-bottom: 6px; font-family: "Archivo", sans-serif; }
+  .note { background: var(--paper); border-radius: 16px; padding: 18px; font-family: "Archivo", sans-serif; font-size: 24px; font-style: italic; }
+  .form { display: grid; gap: 10px; max-width: 460px; }
+  .form input, .form textarea { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: 15px "Archivo", sans-serif; background: #fff; }
+  .form button, .cta { justify-self: start; border: 0; border-radius: 999px; background: var(--ink); color: var(--paper); padding: 12px 20px; cursor: pointer; font: 13px "Archivo", sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .code { font: 600 22px "Archivo", sans-serif; letter-spacing: .12em; border: 1.5px dashed var(--ink); border-radius: 14px; padding: 14px 20px; display: inline-block; }
+  .also { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; color: var(--muted); padding: 0 6px; }
+  .also:empty { display: none; }
+
+  @media (max-width: 640px) {
+    header { padding: 14px 18px; }
+    .ask input { font-size: 18px; padding: 20px 66px 20px 20px; }
+    .ask button { width: 46px; height: 46px; }
+    .acard { padding: 22px; }
+    .acard h2 { font-size: 26px; }
+    .steps { grid-template-columns: 1fr; }
+    .care { grid-template-columns: repeat(2, 1fr); }
+    .bar { grid-template-columns: 90px 1fr 42px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="logo serif" href="hello.html">Loose <i>Threads</i></a>
+  <nav class="mono"><a href="hello.html">Hello</a><a href="index.html">Shop</a><a href="about.html" class="on">About</a></nav>
+</header>
+
+<main>
+  <h1 class="serif"><span class="fix"><span class="struck">Read</span><i class="ins">Ask</i></span> About Us</h1>
+
+  <form class="ask" id="ask" autocomplete="off">
+    <input id="q" aria-label="Question" value="Who are we?" readonly>
+    <button id="btn" type="submit" aria-label="Edit question"></button>
+  </form>
+  <div class="status mono loading" id="status"><span class="dot"></span><span id="statusText">Loading model…</span></div>
+
+  <div id="answer"></div>
+  <div id="also" class="also mono"></div>
+</main>
+
+<script type="module">
+/* ============================================================
+   Answer cards. Each card has example questions ("keys") that get
+   embedded once; a question is matched to the card whose keys are closest.
+   ============================================================ */
+const CARDS = [
+  {
+    id: "shipping", topic: "Shipping",
+    keys: ["do you ship to my city", "how long does delivery take", "shipping charges", "when will my order arrive", "is delivery free", "do you deliver to Pune", "courier and dispatch time"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Shipping</div>
+      <h2 class="serif" style="--i:1">We ship <i>everywhere</i> in India.</h2>
+      <p style="--i:2">Free delivery on orders over ₹1,999. Metro cities get it in 2–4 days, everywhere else in 4–7.</p>
+      <div class="row steps" style="--i:3">
+        <div class="step"><b>Day 0</b><span>Packed in our studio</span></div>
+        <div class="step"><b>Day 1</b><span>Handed to the courier</span></div>
+        <div class="step"><b>Day 2–7</b><span>At your door</span></div>
+      </div>
+      <div class="row pin" style="--i:4">
+        <input inputmode="numeric" maxlength="6" placeholder="Pincode" data-pin>
+        <output data-out>Enter a pincode to check delivery time.</output>
+      </div>`,
+    mount(el) {
+      const inp = el.querySelector("[data-pin]"), out = el.querySelector("[data-out]");
+      const metro = ["11", "40", "56", "60", "70", "50", "41"]; // Delhi, Mumbai, Bengaluru, Chennai, Kolkata, Hyderabad, Pune
+      inp.addEventListener("input", () => {
+        const v = inp.value.replace(/\D/g, "").slice(0, 6); inp.value = v;
+        out.textContent = v.length < 6 ? "Enter a pincode to check delivery time."
+          : metro.includes(v.slice(0, 2)) ? `📦 ${v}: arrives in 2–4 days.` : `📦 ${v}: arrives in 4–7 days.`;
+      });
+    },
+  },
+  {
+    id: "returns", topic: "Returns",
+    keys: ["can I return it", "what is your return policy", "how do refunds work", "can I exchange for another size", "it doesn't fit, what now", "refund timeline"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Returns & exchanges</div>
+      <h2 class="serif" style="--i:1">Changed your mind? <i>30 days.</i></h2>
+      <p style="--i:2">Free pickup from your door. Refunds land within 5 working days of the item reaching us, or swap it for another size at no cost.</p>
+      <div class="row steps" style="--i:3">
+        <div class="step"><b>1</b><span>Request a return from your order page</span></div>
+        <div class="step"><b>2</b><span>We pick it up, no box needed</span></div>
+        <div class="step"><b>3</b><span>Refund or new size, your call</span></div>
+      </div>`,
+  },
+  {
+    id: "sizing", topic: "Sizing",
+    keys: ["what size am I", "size guide", "how do your clothes fit", "measurements chart", "is it true to size", "chest size in cm"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Size guide</div>
+      <h2 class="serif" style="--i:1">Find your <i>fit.</i></h2>
+      <p style="--i:2">Our tees and shirts run slightly boxy. Between two sizes? Go down for a neat fit, up for a relaxed one.</p>
+      <div class="row" style="--i:3;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="toggle" data-unit><button class="on" data-u="cm">cm</button><button data-u="in">inches</button></div>
+        <div class="pin"><input inputmode="numeric" placeholder="Your chest" data-chest style="width:140px"></div>
+      </div>
+      <div class="row" style="--i:4"><table data-table></table></div>`,
+    mount(el) {
+      const sizes = [["S", 92, 96], ["M", 98, 102], ["L", 104, 108], ["XL", 110, 114], ["XXL", 116, 120]];
+      let unit = "cm";
+      const table = el.querySelector("[data-table]"), chest = el.querySelector("[data-chest]");
+      const fmt = v => unit === "cm" ? v : (v / 2.54).toFixed(1);
+      const draw = () => {
+        let c = parseFloat(chest.value); if (unit === "in") c *= 2.54;
+        table.innerHTML = `<tr><th>Size</th><th>Chest (${unit})</th><th>Garment (${unit})</th></tr>` +
+          sizes.map(([s, a, b]) => `<tr class="${c >= a - 3 && c < a + 3 ? "hit" : ""}"><td><b>${s}</b></td><td>${fmt(a - 4)}–${fmt(a + 2)}</td><td>${fmt(b + 8)}</td></tr>`).join("");
+      };
+      el.querySelector("[data-unit]").addEventListener("click", e => {
+        const b = e.target.closest("button"); if (!b) return;
+        unit = b.dataset.u; el.querySelectorAll("[data-unit] button").forEach(x => x.classList.toggle("on", x === b)); draw();
+      });
+      chest.addEventListener("input", draw); draw();
+    },
+  },
+  {
+    id: "about", topic: "Who we are",
+    keys: ["who made this store", "who is behind loose threads", "tell me about the founder", "is this a real shop", "what is loose threads", "about us",
+           "who are you", "what is this place", "how old is this brand", "how long have you been around", "what do you sell", "tell me about yourself",
+           "do you have a physical store", "where are you based", "can I visit your shop"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">About us</div>
+      <h2 class="serif" style="--i:1">One engineer, <i>too many</i> side projects.</h2>
+      <p style="--i:2">Loose Threads is a demo store built for an Instagram reel about making websites that don't look AI-generated. The particles are real; the shop isn't. It's online only, with no physical store, and nothing here is for sale (yet).</p>
+      <div class="row pills" style="--i:3"><span class="pill">🧵 Particle product cards</span><span class="pill">💬 This ask box</span><span class="pill">🗞️ Highlights that refresh daily</span></div>`,
+  },
+  {
+    id: "payment", topic: "Payment",
+    keys: ["how can I pay", "do you accept UPI", "is cash on delivery available", "payment methods", "can I pay by card", "EMI options"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Payment</div>
+      <h2 class="serif" style="--i:1">Pay <i>however</i> you like.</h2>
+      <p style="--i:2">Cash on delivery is available on orders under ₹5,000. No-cost EMI on orders over ₹3,000.</p>
+      <div class="row pills" style="--i:3"><span class="pill">UPI</span><span class="pill">Credit & debit cards</span><span class="pill">Net banking</span><span class="pill">Cash on delivery</span><span class="pill">No-cost EMI</span></div>`,
+  },
+  {
+    id: "materials", topic: "Materials",
+    keys: ["what fabric do you use", "is it 100% cotton", "are your clothes sustainable", "what are the clothes made of", "where are they made", "material composition"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Materials</div>
+      <h2 class="serif" style="--i:1">Mostly <i>cotton</i>, honestly labelled.</h2>
+      <p style="--i:2">Everything is cut and sewn in Tiruppur. Here's what the collection is made of, by weight.</p>
+      <div class="row bars" style="--i:3" data-bars>
+        ${[["Organic cotton", 68], ["Recycled denim", 14], ["Cotton velour", 9], ["Elastane", 5], ["Metal (frames)", 4]]
+          .map(([n, v]) => `<div class="bar"><span>${n}</span><span class="track"><span class="fill" data-w="${v}"></span></span><span class="mono">${v}%</span></div>`).join("")}
+      </div>`,
+    mount(el) { requestAnimationFrame(() => setTimeout(() => el.querySelectorAll("[data-w]").forEach(f => f.style.width = f.dataset.w * 1.4 + "%"), 250)); },
+  },
+  {
+    id: "care", topic: "Care",
+    keys: ["how do I wash this", "care instructions", "can I tumble dry", "will it shrink", "how to iron", "washing machine safe"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Care</div>
+      <h2 class="serif" style="--i:1">Treat it <i>gently.</i></h2>
+      <p style="--i:2">Pre-shrunk fabric, so a normal wash won't shrink it. Turn prints and denim inside out.</p>
+      <div class="row care" style="--i:3">
+        <div><big>30°</big>Machine wash cold</div>
+        <div><big>✕</big>No tumble dry</div>
+        <div><big>••</big>Iron on medium</div>
+        <div><big>☼</big>Dry in shade</div>
+      </div>`,
+  },
+  {
+    id: "contact", topic: "Contact",
+    keys: ["how do I contact you", "customer support", "what is your email", "can I talk to someone", "phone number", "I have a problem with my order",
+           "are you open on sunday", "when do you reply", "what are your working hours", "what time do you open"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Contact</div>
+      <h2 class="serif" style="--i:1">Talk to a <i>human.</i></h2>
+      <p style="--i:2">We reply within a day, Monday to Saturday. Or write to hello@loosethreads.example.</p>
+      <form class="row form" style="--i:3" data-form>
+        <input placeholder="Your email" required type="email">
+        <textarea rows="3" placeholder="What's up?" required></textarea>
+        <button type="submit">Send message</button>
+        <span class="mono" data-msg style="color:var(--muted)"></span>
+      </form>`,
+    mount(el) {
+      el.querySelector("[data-form]").addEventListener("submit", e => {
+        e.preventDefault(); el.querySelector("[data-msg]").textContent = "Demo store: nothing was sent.";
+      });
+    },
+  },
+  {
+    id: "gift", topic: "Gifting",
+    keys: ["do you gift wrap", "can I send this as a gift", "add a gift note", "gift packaging", "birthday present", "gift card"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Gifting</div>
+      <h2 class="serif" style="--i:1">Wrapped, with a <i>note.</i></h2>
+      <p style="--i:2">Add gift wrap for ₹49 at checkout. We leave the invoice out and tuck your note inside. Preview it here:</p>
+      <div class="row pin" style="--i:3"><input placeholder="Write a note…" data-note style="width:100%;max-width:420px;font-family:Archivo"></div>
+      <div class="row note" style="--i:4" data-preview>Happy birthday! Wear it loud.</div>`,
+    mount(el) {
+      const n = el.querySelector("[data-note]"), p = el.querySelector("[data-preview]");
+      n.addEventListener("input", () => p.textContent = n.value || "Happy birthday! Wear it loud.");
+    },
+  },
+  {
+    id: "offers", topic: "Offers",
+    keys: ["any discount", "coupon code", "is there a sale", "first order offer", "student discount", "promo code"],
+    html: () => `
+      <div class="mono" style="--i:0;color:var(--muted)">Offers</div>
+      <h2 class="serif" style="--i:1">First order? <i>10% off.</i></h2>
+      <p style="--i:2">Use this at checkout. One per customer, no minimum spend.</p>
+      <div class="row" style="--i:3;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <span class="code">LOOSE10</span><button class="cta" data-copy>Copy code</button><span class="mono" data-copied style="color:var(--muted)"></span>
+      </div>`,
+    mount(el) {
+      el.querySelector("[data-copy]").addEventListener("click", async () => {
+        const msg = el.querySelector("[data-copied]");
+        try { await navigator.clipboard.writeText("LOOSE10"); msg.textContent = "Copied ✓"; } catch { msg.textContent = "Select and copy the code"; }
+      });
+    },
+  },
+  {
+    id: "meta", topic: "How this works",
+    keys: ["how does this box work", "is this AI", "how does the search work", "what model is this", "how did you build this", "is this chatgpt"],
+    html: ctx => `
+      <div class="mono" style="--i:0;color:var(--muted)">Under the hood</div>
+      <h2 class="serif" style="--i:1">No chatbot. <i>Just maths.</i></h2>
+      <p style="--i:2">${ctx.engine === "model"
+        ? "A 23 MB embedding model (all-MiniLM-L6-v2) runs on your device. It turned every answer card's example questions into vectors when the page loaded. Your question becomes a vector too, and the closest card wins. No server, no API bill."
+        : "This copy is matching by keywords, because the 23 MB embedding model couldn't be downloaded here. On the live site, a model (all-MiniLM-L6-v2) runs on your device, turns your question into a vector and picks the closest card. No server, no API bill."}</p>
+      <div class="row" style="--i:3"><div class="mono" style="color:var(--muted);margin-bottom:12px">Scores for your question</div>
+        <div class="bars">${ctx.results.slice(0, 5).map(r =>
+          `<div class="bar"><span>${r.card.topic}</span><span class="track"><span class="fill" data-w="${Math.max(0, r.score) * 100}"></span></span><span class="mono">${r.score.toFixed(2)}</span></div>`).join("")}</div>
+      </div>`,
+    mount(el) { requestAnimationFrame(() => setTimeout(() => el.querySelectorAll("[data-w]").forEach(f => f.style.width = Math.min(100, f.dataset.w) + "%"), 250)); },
+  },
+];
+
+/* ============================================================
+   Matcher 1: real embedding model (transformers.js, runs in the browser).
+   The model files are served from this site, not Hugging Face:
+     ./models/Xenova/all-MiniLM-L6-v2/{config.json, tokenizer.json,
+       tokenizer_config.json, onnx/model_quantized.onnx}
+   The library and its WebAssembly runtime are served from ./vendor/ too,
+   so the page makes no requests to outside servers for the model.
+   (download_model.sh fetches all of these once.)
+   ============================================================ */
+const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
+const MODEL_DIR = "./models/";
+const EMB_THRESHOLD = 0.38;   // at or above: confident match
+const EMB_GUESS = 0.33;       // between this and the threshold: shown as a best guess
+async function loadEmbeddingMatcher() {
+  const T = await import("./vendor/transformers.min.js");   // transformers.js 3.8.1
+  T.env.backends.onnx.wasm.wasmPaths = new URL("./vendor/", location.href).href;
+  T.env.allowLocalModels = true;
+  T.env.allowRemoteModels = false;          // never fall back to huggingface.co
+  T.env.localModelPath = new URL(MODEL_DIR, location.href).href;
+  const extract = await T.pipeline("feature-extraction", MODEL_ID, { dtype: "q8" });
+  const keyTexts = [], owner = [];
+  CARDS.forEach((c, ci) => c.keys.forEach(k => { keyTexts.push(k); owner.push(ci); }));
+  const keyVecs = (await extract(keyTexts, { pooling: "mean", normalize: true })).tolist();
+  return {
+    engine: "model", threshold: EMB_THRESHOLD, guess: EMB_GUESS,
+    async score(q) {
+      const [v] = (await extract([q], { pooling: "mean", normalize: true })).tolist();
+      const best = new Array(CARDS.length).fill(-1);
+      keyVecs.forEach((kv, i) => { let d = 0; for (let j = 0; j < v.length; j++) d += v[j] * kv[j]; if (d > best[owner[i]]) best[owner[i]] = d; });
+      return best.map((s, i) => ({ card: CARDS[i], score: s })).sort((a, b) => b.score - a.score);
+    },
+  };
+}
+
+/* ============================================================
+   Matcher 2: keyword fallback (TF-IDF over word stems + synonyms +
+   character trigrams for typos). Used until/unless the model loads.
+   ============================================================ */
+const STOP = new Set("a an the is are am i me my you your we our do does did can could will would should of to in on for with it this that what how when where who which there any be or and at by from as please".split(" "));
+const SYN = { deliver: "ship", delivery: "ship", shipping: "ship", courier: "ship", arrive: "ship", dispatch: "ship", pincode: "ship",
+  refund: "return", exchange: "return", fit: "size", measurement: "size", chest: "size", large: "size", small: "size", medium: "size",
+  upi: "pay", cod: "pay", cash: "pay", card: "pay", emi: "pay", payment: "pay",
+  wash: "care", clean: "care", iron: "care", shrink: "care", dry: "care",
+  fabric: "material", cotton: "material", made: "material", sustainable: "material", polyester: "material",
+  contact: "contact", email: "contact", phone: "contact", call: "contact", support: "contact", help: "contact",
+  founder: "about", owner: "about", real: "about", gift: "gift", wrap: "gift", present: "gift", birthday: "gift",
+  discount: "offer", coupon: "offer", code: "offer", sale: "offer", promo: "offer", cheap: "offer",
+  ai: "meta", model: "meta", chatgpt: "meta", search: "meta", box: "meta", build: "meta", work: "meta" };
+const stem = w => w.replace(/(ing|ed|es|s)$/, "") || w;
+function feats(text) {
+  const f = new Map(), add = (k, w) => f.set(k, (f.get(k) || 0) + w);
+  for (const raw of text.toLowerCase().match(/[a-z0-9]+/g) || []) {
+    if (STOP.has(raw)) continue;
+    const s = stem(raw); add("w:" + s, 1);
+    const syn = SYN[raw] || SYN[s]; if (syn) add("w:" + syn, 1.2);
+    const p = ` ${s} `; for (let i = 0; i < p.length - 2; i++) add("t:" + p.slice(i, i + 3), 0.25);
+  }
+  return f;
+}
+function makeKeywordMatcher() {
+  const docs = CARDS.map(c => feats(c.topic + " " + c.id + " " + c.keys.join(" ")));
+  const df = new Map(); docs.forEach(d => d.forEach((_, k) => df.set(k, (df.get(k) || 0) + 1)));
+  const idf = k => Math.log(1 + CARDS.length / (df.get(k) || 0.5));
+  const vec = f => { const v = new Map(); let n = 0; f.forEach((w, k) => { const x = w * idf(k); v.set(k, x); n += x * x; }); return { v, n: Math.sqrt(n) || 1 }; };
+  const dvecs = docs.map(vec);
+  return {
+    engine: "keywords", threshold: 0.1, guess: 0.07,
+    async score(q) {
+      const qv = vec(feats(q));
+      return dvecs.map((d, i) => { let dot = 0; qv.v.forEach((x, k) => { const y = d.v.get(k); if (y) dot += x * y; }); return { card: CARDS[i], score: dot / (qv.n * d.n) }; })
+        .sort((a, b) => b.score - a.score);
+    },
+  };
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const status = $("#status"), statusText = $("#statusText"), answer = $("#answer"), q = $("#q");
+let matcher = makeKeywordMatcher(), shownId = null, seq = 0;
+
+function setStatus(kind, text) { status.className = "status mono " + kind; statusText.textContent = text; }
+
+(async () => {
+  try {
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 30000));
+    matcher = await Promise.race([loadEmbeddingMatcher(), timeout]);
+    setStatus("model", "all-MiniLM-L6-v2");
+  } catch (e) {
+    console.warn("Embedding model unavailable, using keyword matching:", e);
+    setStatus("fallback", "Model couldn't download here · keyword matching");
+  }
+})();
+
+// When a tall card doesn't fit, fade its bottom edge to hint that it scrolls.
+function fadeIfMore() { answer.classList.toggle("more", answer.scrollHeight - answer.scrollTop - answer.clientHeight > 4); }
+answer.addEventListener("scroll", fadeIfMore, { passive: true });
+addEventListener("resize", fadeIfMore);
+
+function render(card, ctx, others, guess = false) {
+  shownId = card ? card.id : "none";
+  const tag = card && guess ? `<div class="guess mono" style="--i:1">Best guess</div>` : "";
+  const body = card ? tag + card.html(ctx) : `
+      <div class="mono" style="--i:0;color:var(--muted)">Hmm</div>
+      <h2 class="serif" style="--i:1">No card for <i>that</i> yet.</h2>
+      <p style="--i:2">Try one of these instead:</p>
+      <div class="row pills" style="--i:3">${CARDS.map(c => `<button class="chip" type="button" data-ask="${c.keys[0]}">${c.topic}</button>`).join("")}</div>`;
+  answer.innerHTML = `<article class="acard">${body}</article>`;
+  answer.scrollTop = 0; requestAnimationFrame(fadeIfMore);
+  $("#also").innerHTML = card ? `Also asked: ${others.map(c => `<button class="chip" type="button" data-ask="${c.keys[0]}">${c.topic}</button>`).join("")}` : "";
+  if (card && card.mount) card.mount(answer.querySelector(".acard"), ctx);
+}
+
+async function ask(text) {
+  text = text.trim(); if (text.length < 3) return false;
+  const my = ++seq;
+  const results = await matcher.score(text);
+  if (my !== seq) return false;                  // a newer question arrived meanwhile
+  const top = results[0];
+  const ok = top.score >= matcher.guess;            // below guess: no card
+  const guess = ok && top.score < matcher.threshold; // between guess and threshold: tagged "Best guess"
+  render(ok ? top.card : null, { results, engine: matcher.engine },
+         results.filter(r => r.card !== top.card).slice(0, 3).map(r => r.card), guess);
+  return true;
+}
+
+/* ---- the question line: shown read-only with a pencil; tap to edit, send to change the card ---- */
+const form = $("#ask"), btn = $("#btn");
+const ICON_EDIT = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg>`;
+const ICON_SEND = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>`;
+let editing = false, lastQuestion = q.value;
+
+function setEditing(on) {
+  editing = on;
+  q.readOnly = !on;
+  form.classList.toggle("editing", on);
+  btn.innerHTML = on ? ICON_SEND : ICON_EDIT;
+  btn.setAttribute("aria-label", on ? "Send question" : "Edit question");
+  if (on) { q.focus(); q.select(); } else q.blur();
+}
+
+btn.addEventListener("click", e => { if (!editing) { e.preventDefault(); setEditing(true); } });
+q.addEventListener("click", () => { if (!editing) setEditing(true); });
+q.addEventListener("keydown", e => { if (e.key === "Escape" && editing) { q.value = lastQuestion; setEditing(false); } });
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!editing) return;
+  if (q.value.trim().length < 3) { q.focus(); return; }
+  lastQuestion = q.value;
+  setEditing(false);
+  await ask(q.value);
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-ask]"); if (!b) return;
+  const t = b.dataset.ask;
+  q.value = lastQuestion = t.charAt(0).toUpperCase() + t.slice(1) + "?";
+  setEditing(false); ask(t);
+});
+
+// Opening state: the first question is already asked and answered.
+setEditing(false);
+render(CARDS.find(c => c.id === "about"), { results: [], engine: matcher.engine },
+       ["shipping", "sizing", "returns"].map(id => CARDS.find(c => c.id === id)));
+</script>
+</body>
+</html>

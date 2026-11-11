@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loose Threads — Hello</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap" rel="stylesheet">
+<style>
+  :root { --paper: #f2f3f5; --ink: #0d0e12; --muted: #6a6d76; --line: #d9dbe1; --accent: #3047ff; --card: #ffffff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: "Archivo", system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  .mono { font-family: "Archivo", system-ui, sans-serif; font-weight: 600; font-stretch: 112%; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+  .serif { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-stretch: 125%; letter-spacing: -.03em; }
+  .serif i, .logo i { font-style: normal; }
+  a { color: inherit; }
+
+  header {
+    position: fixed; inset: 0 0 auto 0; z-index: 20;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 32px;
+    background: linear-gradient(var(--paper) 60%, transparent);
+  }
+  .logo { font-size: 19px; text-decoration: none; text-transform: uppercase; }
+  .logo i { color: var(--accent); }
+  nav { display: flex; gap: 22px; }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a.on, nav a:hover { color: var(--ink); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 84px 32px 40px; }
+  h1 { font-size: clamp(30px, 4.4vw, 58px); line-height: .95; text-transform: uppercase; }
+  h1 i { color: var(--accent); }
+  .sub { margin-top: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .sub .dot { width: 7px; height: 7px; border-radius: 50%; background: #4caf7a; box-shadow: 0 0 10px #4caf7a; }
+
+  .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 28px; }
+  .col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .col-head { display: flex; justify-content: space-between; color: var(--muted); padding: 0 4px; }
+
+  /* the #1 + its outfit */
+  .hero {
+    background: var(--card); border: 1px solid #e3e5ea; border-radius: 22px; padding: 18px;
+    display: flex; flex-direction: column; gap: 14px; text-decoration: none; color: inherit;
+    box-shadow: 0 24px 50px -36px rgba(10,12,20,.45); transition: transform .2s, box-shadow .2s, border-color .2s;
+    opacity: 0; animation: up .5s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  .hero:hover { transform: translateY(-3px); border-color: var(--ink); box-shadow: 0 30px 60px -36px rgba(10,12,20,.55); }
+  .rank { font-size: 12px; color: var(--accent); }
+  .title { font-size: 22px; line-height: 1.12; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .by { color: var(--muted); font-size: 14px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .outfit { display: grid; grid-template-columns: clamp(96px, 16vh, 150px) 1fr; gap: 14px; align-items: center; border-top: 1px solid var(--line); padding-top: 14px; }
+  .outfit .ph { aspect-ratio: 1; border-radius: 14px; background: var(--paper); display: grid; place-items: center; overflow: hidden; }
+  .outfit .ph img { width: 86%; height: 86%; object-fit: contain; mix-blend-mode: multiply; }
+  .mood { color: var(--muted); }
+  .pname { font-weight: 700; font-size: 17px; line-height: 1.2; margin-top: 6px; }
+  .cw { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 14px; color: var(--muted); }
+  .sw { width: 12px; height: 12px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.15) inset; }
+  .see { margin-top: 10px; color: var(--ink); }
+  .hero:hover .see { color: var(--accent); }
+
+  /* #2–#5 */
+  .list { list-style: none; display: grid; gap: 2px; }
+  .list a {
+    display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; text-decoration: none;
+    padding: 9px 10px; border-radius: 12px; transition: background .15s;
+    opacity: 0; animation: up .45s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  .list a:hover { background: var(--card); }
+  .list .n { color: var(--muted); font-size: 12px; }
+  .list .t { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .t span { font-weight: 400; color: var(--muted); }
+  .list .pair { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .list .pair .sw { width: 10px; height: 10px; }
+
+  .skel { border-radius: 22px; background: var(--card); min-height: 300px; animation: pulse 1.2s ease-in-out infinite; }
+  .skel.s { min-height: 150px; border-radius: 14px; }
+  .empty { border: 1px dashed var(--line); border-radius: 22px; padding: 28px 18px; color: var(--muted); text-align: center; font-size: 14px; }
+  @keyframes up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 50% { opacity: .5; } }
+
+  .credit { margin-top: 22px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+  @media (max-width: 900px) {
+    header { padding: 14px 18px; }
+    main { padding: 76px 18px 40px; }
+    .cols { grid-template-columns: 1fr; gap: 28px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="logo serif" href="hello.html">Loose <i>Threads</i></a>
+  <nav class="mono"><a href="hello.html" class="on">Hello</a><a href="index.html">Shop</a><a href="about.html">About</a></nav>
+</header>
+
+<main>
+  <h1 class="serif">Dress like what's <i>trending</i></h1>
+  <div class="sub mono"><span class="dot"></span><span id="when">Live charts</span></div>
+
+  <div class="cols">
+    <section class="col" id="col-song"><div class="col-head mono"><span data-label="Songs">Songs</span><span>Apple Music</span></div><div class="skel"></div><div class="skel s"></div></section>
+    <section class="col" id="col-movie"><div class="col-head mono"><span data-label="Movies">Movies</span><span>Apple TV</span></div><div class="skel"></div><div class="skel s"></div></section>
+    <section class="col" id="col-book"><div class="col-head mono"><span>Books · Today</span><span>Open Library</span></div><div class="skel"></div><div class="skel s"></div></section>
+  </div>
+
+  <p class="credit">Charts load live in your browser from Apple's iTunes India charts and Open Library's daily trending list. Each title's genre picks a mood, and each mood picks an outfit from the store. Outfits rotate daily.</p>
+</main>
+
+<script>
+const PRODUCTS   = __PRODUCTS__;    // [{id, cat, name, price, swatch}]
+const COLOURWAYS = __COLOURWAYS__;  // {id: [{name, hex}]}
+const PHOTOS     = __PHOTOS__;      // {"id:k": data URI} for every outfit a mood can pick
+
+/* Live charts, fetched in the browser (no keys, no server). */
+/* Which country's charts? Visitor's time zone first (most reliable), then the
+   region in their browser language (en-GB → gb), else India. ?cc=gb overrides. */
+const TZ_CC = {
+  "Asia/Kolkata": "in", "Asia/Calcutta": "in", "Asia/Dubai": "ae", "Asia/Riyadh": "sa", "Asia/Qatar": "qa", "Asia/Karachi": "pk",
+  "Asia/Dhaka": "bd", "Asia/Colombo": "lk", "Asia/Kathmandu": "np", "Asia/Singapore": "sg", "Asia/Kuala_Lumpur": "my",
+  "Asia/Jakarta": "id", "Asia/Bangkok": "th", "Asia/Manila": "ph", "Asia/Ho_Chi_Minh": "vn", "Asia/Saigon": "vn",
+  "Asia/Hong_Kong": "hk", "Asia/Taipei": "tw", "Asia/Tokyo": "jp", "Asia/Seoul": "kr", "Asia/Shanghai": "cn",
+  "Asia/Jerusalem": "il", "Europe/Istanbul": "tr", "Europe/London": "gb", "Europe/Dublin": "ie", "Europe/Paris": "fr",
+  "Europe/Berlin": "de", "Europe/Madrid": "es", "Europe/Rome": "it", "Europe/Amsterdam": "nl", "Europe/Brussels": "be",
+  "Europe/Zurich": "ch", "Europe/Vienna": "at", "Europe/Stockholm": "se", "Europe/Oslo": "no", "Europe/Copenhagen": "dk",
+  "Europe/Helsinki": "fi", "Europe/Warsaw": "pl", "Europe/Prague": "cz", "Europe/Lisbon": "pt", "Europe/Athens": "gr",
+  "Europe/Bucharest": "ro", "Europe/Budapest": "hu", "Europe/Kiev": "ua", "Europe/Kyiv": "ua", "Europe/Moscow": "ru",
+  "Africa/Johannesburg": "za", "Africa/Lagos": "ng", "Africa/Nairobi": "ke", "Africa/Cairo": "eg", "Africa/Casablanca": "ma",
+  "Australia/Sydney": "au", "Australia/Melbourne": "au", "Australia/Brisbane": "au", "Australia/Perth": "au", "Australia/Adelaide": "au",
+  "Pacific/Auckland": "nz", "America/New_York": "us", "America/Chicago": "us", "America/Denver": "us", "America/Phoenix": "us",
+  "America/Los_Angeles": "us", "America/Anchorage": "us", "Pacific/Honolulu": "us", "America/Detroit": "us",
+  "America/Toronto": "ca", "America/Vancouver": "ca", "America/Edmonton": "ca", "America/Winnipeg": "ca", "America/Halifax": "ca",
+  "America/Mexico_City": "mx", "America/Bogota": "co", "America/Lima": "pe", "America/Santiago": "cl",
+  "America/Argentina/Buenos_Aires": "ar", "America/Buenos_Aires": "ar", "America/Sao_Paulo": "br",
+};
+function visitorCountry() {
+  try { const q = new URLSearchParams(location.search).get("cc"); if (q && /^[a-z]{2}$/i.test(q)) return q.toLowerCase(); } catch {}
+  try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; if (TZ_CC[z]) return TZ_CC[z]; } catch {}
+  for (const l of navigator.languages || [navigator.language]) { const m = /-([A-Za-z]{2})$/.exec(l || ""); if (m) return m[1].toLowerCase(); }
+  return "in";
+}
+const CC = visitorCountry(), FALLBACK_CC = "in";
+const countryName = cc => { try { return new Intl.DisplayNames(["en"], { type: "region" }).of(cc.toUpperCase()) || cc.toUpperCase(); } catch { return cc.toUpperCase(); } };
+const appleUrl = (cc, chart) => `https://itunes.apple.com/${cc}/rss/${chart}/limit=5/json`;
+
+// Visitor's country first; if that chart is empty or unreachable, India's.
+async function appleChart(chart) {
+  for (const cc of CC === FALLBACK_CC ? [CC] : [CC, FALLBACK_CC]) {
+    try { const items = await fromApple(appleUrl(cc, chart)); if (items.length) return { items, cc }; } catch {}
+  }
+  throw new Error("chart unavailable");
+}
+
+const SOURCES = {
+  book:  "https://openlibrary.org/trending/daily.json?limit=5",
+};
+const MOODS = [   // first rule whose words appear in the genre/subjects wins
+  { word: "in stealth mode", re: /action|thriller|adventure|crime|spy|war|sci-?fi/i,
+    picks: [["shoes", 0], ["t-shirt", 0], ["skirt", 0]] },
+  { word: "soft",            re: /romance|love|romantic|r&b|soul/i,
+    picks: [["crop_top", 0], ["specs", 2], ["crop_top", 2]] },
+  { word: "dark",            re: /horror|mystery|gothic|metal|detective/i,
+    picks: [["skirt", 0], ["cap", 3], ["shoes", 0]] },
+  { word: "loud",            re: /tamil|hindi|bollywood|punjabi|telugu|malayalam|kannada|indian|hip-?hop|rap|dance|pop|electronic/i,
+    picks: [["shirt", 0], ["shirt", 3], ["t-shirt", 2]] },
+  { word: "earthy",          re: /country|folk|indie|singer|acoustic|nature|travel|history/i,
+    picks: [["skirt", 2], ["pant", 2], ["specs", 1]] },
+  { word: "bright",          re: /comedy|kids|family|animation|children|fantasy/i,
+    picks: [["cap", 0], ["crop_top", 1], ["cap", 1]] },
+  { word: "easy",            re: /./,   // fallback: self-help, business, everything else
+    picks: [["t-shirt", 0], ["specs", 0], ["pant", 0]] },
+];
+
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const prod = id => PRODUCTS.find(p => p.id === id);
+const day = Math.floor(Date.now() / 864e5);
+
+async function getJSON(url) { const r = await fetch(url); if (!r.ok) throw new Error(r.status); return r.json(); }
+async function fromApple(url) {
+  return ((await getJSON(url)).feed.entry || []).map(x => ({ title: x["im:name"].label, by: x["im:artist"]?.label || "", genre: x.category?.attributes?.label || "" }));
+}
+async function fromOpenLibrary(url) {
+  const works = (await getJSON(url)).works || [];
+  return Promise.all(works.map(async w => {
+    let genre = "";
+    try { genre = ((await getJSON("https://openlibrary.org" + w.key + ".json")).subjects || []).slice(0, 12).join(" "); } catch {}
+    return { title: w.title, by: (w.author_name || [])[0] || "", genre };
+  }));
+}
+
+function outfitFor(genre, used, offset = 0) {
+  const m = MOODS.find(m => m.re.test(genre || "")) || MOODS[MOODS.length - 1];
+  for (let i = 0; i < m.picks.length; i++) {          // rotate daily; the three #1s never share a product
+    const [pid, k] = m.picks[(day + offset + i) % m.picks.length];
+    if (!used || !used.has(pid)) { used && used.add(pid); return { word: m.word, pid, k }; }
+  }
+  const [pid, k] = m.picks[0]; return { word: m.word, pid, k };
+}
+const storeLink = o => `index.html#${o.pid}`;
+
+function renderCol(kind, items, used) {
+  const col = document.getElementById("col-" + kind), head = col.querySelector(".col-head").outerHTML;
+  if (!items || !items.length) { col.innerHTML = head + `<div class="empty">This chart can't be reached right now.</div>`; return; }
+  const [top, ...rest] = items;
+  const o = outfitFor(top.genre, used), p = prod(o.pid), cw = COLOURWAYS[o.pid][o.k];
+  col.innerHTML = head + `
+    <a class="hero" href="${storeLink(o)}" data-pid="${o.pid}" data-k="${o.k}">
+      <div>
+        <div class="rank mono">#1</div>
+        <div class="title serif">${esc(top.title)}</div>
+        <div class="by">${esc(top.by)}</div>
+      </div>
+      <div class="outfit">
+        <div class="ph"><img alt="${esc(p.name)} in ${esc(cw.name)}" src="${PHOTOS[o.pid + ":" + o.k]}"></div>
+        <div>
+          <div class="mood mono">Dress ${o.word}</div>
+          <div class="pname">${esc(p.name)}</div>
+          <div class="cw"><span class="sw" style="background:${cw.hex || p.swatch}"></span>${esc(cw.name)} · ${esc(p.price)}</div>
+          <div class="see mono">See it in the store →</div>
+        </div>
+      </div>
+    </a>
+    <ol class="list">${rest.map((t, i) => {
+      const r = outfitFor(t.genre, null, i + 1), rp = prod(r.pid), rc = COLOURWAYS[r.pid][r.k];
+      return `<li><a href="${storeLink(r)}" data-pid="${r.pid}" data-k="${r.k}" style="animation-delay:${150 + i * 60}ms">
+        <span class="n mono">${i + 2}</span>
+        <span class="t">${esc(t.title)} <span>· ${esc(t.by)}</span></span>
+        <span class="pair"><span class="sw" style="background:${rc.hex || rp.swatch}"></span>${esc(rc.name)}</span>
+      </a></li>`;
+    }).join("")}</ol>`;
+}
+
+(async () => {
+  const kinds = ["song", "movie", "book"];
+  const loads = [appleChart("topsongs"), appleChart("topmovies"), fromOpenLibrary(SOURCES.book).then(items => ({ items }))];
+  const res = await Promise.allSettled(loads);
+  const used = new Set();
+  res.forEach((r, i) => {
+    const v = r.status === "fulfilled" ? r.value : null;
+    const label = document.querySelector(`#col-${kinds[i]} [data-label]`);
+    if (label) label.textContent = `${label.dataset.label} · ${countryName(v && v.cc ? v.cc : CC)}`;
+    renderCol(kinds[i], v ? v.items : null, used);
+  });
+  const t = new Date();
+  document.getElementById("when").textContent =
+    `Live charts · ${t.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}`;
+})();
+
+// Tell the store which colourway to highlight when it opens
+document.addEventListener("click", e => {
+  const a = e.target.closest("a[data-pid]"); if (!a) return;
+  try { sessionStorage.setItem("lt-flash", a.dataset.pid + ":" + a.dataset.k); } catch {}
+});
+</script>
+</body>
+</html>
