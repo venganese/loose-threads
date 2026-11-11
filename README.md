@@ -15,18 +15,6 @@ python3 -m http.server 8000
 # open http://localhost:8000/hello.html
 ```
 
-Open it through a local server, not by double-clicking the file: the About page loads its model files with `fetch`, which browsers block for `file://` pages.
-
-Shortcuts for filming:
-- **Shop:** ↓ / ↑ (or Space) step through the products one at a time.
-- **Hello:** add `?cc=gb` (or any two-letter country code) to force a country's charts.
-
-## Deploy (GitHub Pages)
-
-Push this repo, then **Settings → Pages → Deploy from branch → `main` / root**. The largest file is about 23 MB, well under GitHub's 100 MB limit, so no Git LFS is needed.
-
-The site's root URL opens `index.html` (the Shop). The logo and the first menu item link to `hello.html`.
-
 ## What's in here
 
 ```
